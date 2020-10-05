@@ -1,9 +1,9 @@
-#ifndef MPC_SMALL_VECTOR
-#define MPC_SMALL_VECTOR
+#ifndef EPC_SMALL_VECTOR
+#define EPC_SMALL_VECTOR
 
 #include <cstddef>
 
-namespace mpc
+namespace epc
 {
 
 template <typename T, size_t N>
@@ -12,6 +12,6 @@ class small_vector
 
 }; // class small vector
 
-} // namespace mpc
+} // namespace epc
 
-#endif // MPC_SMALL_VECTOR
+#endif // EPC_SMALL_VECTOR
