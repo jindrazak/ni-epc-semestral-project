@@ -66,9 +66,47 @@ namespace epc {
             std::swap(size_, other.size);
         }
 
-        void push_back(const T &value);
+        void reserve(size_t new_capacity){
+            if (new_capacity <= capacity_) return;
+            T* data = (T*)::operator new(new_capacity * sizeof(T));
+            size_t i = 0;
+            try {
+                for ( ; i < size_; i++) new (data + i) T(std::move_if_noexcept(data_[i]));
+            } catch(...) {
+                for ( ; i > 0; i--) {
+                    (data + i - 1)->~T();
+                    ::operator delete(data);
+                    throw;
+                }
+            }
+            clear();
+            ::operator delete(data_);
+            data_ = data;
+            capacity_ = new_capacity;
+            size_ = i;
+        }
 
-        void clear() noexcept { try { for (; size_ > 0; size_--) (data_ + size_ - 1)->~T(); } catch (...) {}}
+        void push_back(const T &value){
+            emplace_back(value);
+        };
+
+        void push_back(T &&value){
+            emplace_back(std::move(value));
+        };
+
+        template <typename... Ts>
+        void emplace_back(Ts&&... params) {
+            if (size_ == capacity_) reserve(capacity_ == 0 ? 1 : 2 * capacity_);
+            new (data_ + size_) T(std::forward<Ts>(params)...);
+            size_++;
+        }
+
+        void clear() noexcept {
+            try {
+                for (; size_ > 0; size_--){
+                    (data_ + size_ - 1)->~T();
+                }
+            } catch (...) {}}
 
         T &operator[](size_t i) { return data_[i]; }
 
