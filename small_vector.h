@@ -9,7 +9,7 @@ namespace epc {
     template<typename T, size_t N>
     class small_vector {
         T *data_;
-        T buf_[N];
+        typename std::aligned_storage<sizeof(T), alignof(T)>::type buf_[N];
         size_t capacity_, size_;
     public:
         small_vector() : data_(nullptr), capacity_(N), size_(0) {}
@@ -50,7 +50,7 @@ namespace epc {
                 if (this != &other) {
                     clear();
                     if(other.size_ <= N){
-                        std::uninitialized_copy(other.data_, other.data_ + other.size_, buf_);      //todo use iterators
+                        std::uninitialized_copy(other.data_, other.data_ + other.size_, (T*)&buf_);      //todo use iterators
                     }else{
                         std::uninitialized_copy(other.data_, other.data_ + other.size_, data_);     //todo use iterators
                     }
@@ -85,8 +85,8 @@ namespace epc {
             size_t i = 0;
             try {
                 // if capacity == N, we need to move elements from the buf_, not the data_
-                if(capacity_ == N){
-                    for ( ; i < size_; i++) new (data + i) T(std::move_if_noexcept(buf_[i]));
+                if(N == capacity_){
+                    for ( ; i < size_; i++) new (data + i) T(std::move_if_noexcept(((T*)&buf_)[i]));
                 }else{
                     for ( ; i < size_; i++) new (data + i) T(std::move_if_noexcept(data_[i]));
                 }
@@ -116,8 +116,8 @@ namespace epc {
         void emplace_back(Ts&&... params) {
             constexpr size_t numberOfParams = sizeof...(Ts);
             if (size_ + numberOfParams > capacity_) reserve(capacity_ == 0 ? 1 : 2 * capacity_);
-            if(capacity_ == N){
-                new (buf_ + size_) T(std::forward<Ts>(params)...);
+            if(N == capacity_){
+                new ((T*)&buf_ + size_) T(std::forward<Ts>(params)...);
             }else{
                 new (data_ + size_) T(std::forward<Ts>(params)...);
             }
