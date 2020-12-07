@@ -12,6 +12,14 @@ namespace epc {
         typename std::aligned_storage<sizeof(T), alignof(T)>::type buf_[N];
         size_t capacity_, size_;
     public:
+        using value_type = T;
+        using reference = T&;
+        using const_reference = const T&;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using iterator = T*;
+        using const_iterator = const T*;
+
         small_vector() : data_(nullptr), capacity_(N), size_(0) {}
 
         small_vector(const small_vector &other) : small_vector() { // copy constructor
@@ -19,7 +27,7 @@ namespace epc {
             data_ = (T *) ::operator new(other.size_ * sizeof(T));
             capacity_ = other.size_;
             try {
-                if (other.capacity_ == N) {
+                if (N == other.capacity_) {
                     std::uninitialized_copy(other.buf_, other.buf_ + other.size_, buf_);        //todo use iterators
                 } else {
                     std::uninitialized_copy(other.data_, other.data_ + other.size_, data_);     //todo use iterators
@@ -80,7 +88,7 @@ namespace epc {
 
         void reserve(size_t new_capacity){
             if (new_capacity <= capacity_) return;
-            // capacity_ is always >= N, therefore we need to use the dynamically-allocated memory
+            // capacity_ is always > N, therefore we need to use the dynamically-allocated memory
             T* data = (T*)::operator new(new_capacity * sizeof(T));
             size_t i = 0;
             try {
@@ -129,20 +137,48 @@ namespace epc {
 
         void clear() noexcept {
             try {
-                for (; size_ > 0; size_--){
-                    (data_ + size_ - 1)->~T();
+                if(N == capacity_){
+                    std::destroy(buf_, buf_ + size_);
+                }else{
+                    std::destroy(data_, data_ + size_);
                 }
-            } catch (...) {}}
-
-        T &operator[](size_t i) {
-            if(capacity_ == N) return buf_[i];
-            return data_[i];
+            } catch (...) {}
         }
 
-        const T &operator[](size_t i) const {
-            if(capacity_ == N) return buf_[i];
-            return data_[i];
+        const_iterator begin() const noexcept {
+            return data();
         }
+
+        const_iterator end() const noexcept {
+            return data() + size_;
+        }
+
+        size_t size() const noexcept {
+            return size_;
+        }
+
+        size_t capacity() const noexcept {
+            return capacity_;
+        }
+
+        pointer data() noexcept {
+            if(N == capacity_) return ((T*)&buf_);
+            return data_;
+        }
+
+        const_pointer data() const noexcept {
+            if(N == capacity_) return ((T*)&buf_);
+            return data_;
+        }
+
+        reference operator[](size_t index) noexcept {
+            return *(data() + index);
+        }
+
+        const_reference operator[](size_t index) const noexcept {
+            return *(data() + index);
+        }
+
     };
 
     template<typename T, size_t N> void swap(small_vector<T,N> &a, small_vector<T,N> &b) noexcept { a.swap(b); }
