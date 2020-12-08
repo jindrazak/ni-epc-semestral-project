@@ -91,12 +91,13 @@ namespace epc {
 
         void reserve(size_t new_capacity){
             if (new_capacity <= capacity_) return;
-            // capacity_ is always > N, therefore we need to use the dynamically-allocated memory
+            // new_capacity is always > N, therefore we need to use the dynamically-allocated memory
             T* data = (T*)::operator new(new_capacity * sizeof(T));
             size_t i = 0;
             try {
-                // if capacity == N, we need to move elements from the buf_, not the data_
+                // if capacity == N (therefore we were using the 'buf_'), we need to move elements from the 'buf_'
                 if(N == capacity_){
+                    //move_if_noexcept gives us strong exception guarantee
                     for ( ; i < size_; i++) new (data + i) T(std::move_if_noexcept(((T*)&buf_)[i]));
                 }else{
                     for ( ; i < size_; i++) new (data + i) T(std::move_if_noexcept(data_[i]));
@@ -104,9 +105,9 @@ namespace epc {
             } catch(...) {
                 for ( ; i > 0; i--) {
                     (data + i - 1)->~T();
-                    ::operator delete(data);
-                    throw;
                 }
+                ::operator delete(data);
+                throw;
             }
             clear();
             ::operator delete(data_);
