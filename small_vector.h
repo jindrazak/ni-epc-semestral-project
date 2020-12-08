@@ -53,11 +53,7 @@ namespace epc {
             } else {
                 if (this != &other) {
                     clear();
-                    if(other.size_ <= N){
-                        std::uninitialized_copy(other.data_, other.data_ + other.size_, (T*)&buf_);      //todo use iterators
-                    }else{
-                        std::uninitialized_copy(other.data_, other.data_ + other.size_, data_);     //todo use iterators
-                    }
+                    std::uninitialized_copy(other.begin(), other.end(), N >= other.size_ ? (T*)&buf_ : data_);
                     size_ = other.size_;
                 }
             }
