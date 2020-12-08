@@ -116,6 +116,16 @@ namespace epc {
             size_ = i;
         }
 
+        void resize(size_t size, const value_type& value = value_type()) {
+            if (size < size_){
+                std::destroy(begin() + size, end());
+                size_ = size;
+            } else if (size > size_){
+                if(size > capacity_) reserve(size);
+                for ( ; size_ < size; size_++) new (begin() + size_) T(value);
+            }
+        }
+
         void push_back(const value_type &value){
             emplace_back(value);
         };
