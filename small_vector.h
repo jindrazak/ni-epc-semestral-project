@@ -104,11 +104,11 @@ namespace epc {
             size_ = i;
         }
 
-        void push_back(const T &value){
+        void push_back(const value_type &value){
             emplace_back(value);
         };
 
-        void push_back(T &&value){
+        void push_back(value_type &&value){
             emplace_back(std::move(value));
         };
 
@@ -124,14 +124,19 @@ namespace epc {
             size_+= numberOfParams;
         }
 
-        int size() noexcept { return this->size_; }
-        int capacity() noexcept { return this->capacity_; }
-
         void clear() noexcept {
             try {
                 std::destroy(begin(), end());
                 size_ = 0;
             } catch (...) {}
+        }
+
+        iterator begin() noexcept {
+            return data();
+        }
+
+        iterator end() noexcept {
+            return data() + size_;
         }
 
         const_iterator begin() const noexcept {
