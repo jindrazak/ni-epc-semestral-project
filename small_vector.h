@@ -27,11 +27,7 @@ namespace epc {
             data_ = (T *) ::operator new(other.size_ * sizeof(T));
             capacity_ = other.size_;
             try {
-                if (N == other.capacity_) {
-                    std::uninitialized_copy(other.buf_, other.buf_ + other.size_, buf_);        //todo use iterators
-                } else {
-                    std::uninitialized_copy(other.data_, other.data_ + other.size_, data_);     //todo use iterators
-                }
+                std::uninitialized_copy(other.begin(), other.end(), N >= other.size_ ? (T*)&buf_ : data_);
             } catch (...) {
                 ::operator delete(data_);
                 throw;
@@ -137,11 +133,8 @@ namespace epc {
 
         void clear() noexcept {
             try {
-                if(N == capacity_){
-                    std::destroy(buf_, buf_ + size_);
-                }else{
-                    std::destroy(data_, data_ + size_);
-                }
+                std::destroy(begin(), end());
+                size_ = 0;
             } catch (...) {}
         }
 
@@ -178,7 +171,6 @@ namespace epc {
         const_reference operator[](size_t index) const noexcept {
             return *(data() + index);
         }
-
     };
 
     template<typename T, size_t N> void swap(small_vector<T,N> &a, small_vector<T,N> &b) noexcept { a.swap(b); }
