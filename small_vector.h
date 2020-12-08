@@ -75,7 +75,7 @@ namespace epc {
             std::swap(buf_, other.buf_);
             std::swap(data_, other.data_);
             std::swap(capacity_, other.capacity_);
-            std::swap(size_, other.size);
+            std::swap(size_, other.size_);
         }
 
         void reserve(size_t new_capacity){
