@@ -20,32 +20,42 @@ namespace epc {
         using iterator = T*;
         using const_iterator = const T*;
 
-        small_vector() : data_(nullptr), capacity_(N), size_(0) {}
+        small_vector() noexcept : data_(nullptr), capacity_(N), size_(0) {}
 
-        small_vector(const small_vector &other) : small_vector() { // copy constructor
+        // copy constructor
+        small_vector(const small_vector &other) : small_vector() {
             if (other.size_ == 0) return;
-            data_ = (T *) ::operator new(other.size_ * sizeof(T));
-            capacity_ = other.size_;
-            try {
-                std::uninitialized_copy(other.begin(), other.end(), N >= other.size_ ? (T*)&buf_ : data_);
-            } catch (...) {
-                ::operator delete(data_);
-                throw;
+            if(N < other.size_){
+                //we need to use the 'data_'
+                data_ = (T *) ::operator new(other.size_ * sizeof(T));
+                try {
+                    std::uninitialized_copy(other.begin(), other.end(), data_);
+                } catch (...) {
+                    ::operator delete(data_);
+                    throw;
+                }
+                capacity_ = other.size_;
+            }else{
+                //data fits to the 'buf_'
+                std::uninitialized_copy(other.begin(), other.end(), (T*)&buf_);
             }
+
             size_ = other.size_;
         }
 
-        small_vector(small_vector &&other) noexcept: // move constructor
-        buf_(other.buf_),
-        data_(other.data_),
-        capacity_(other.capacity_),
-        size_(other.size_)
+        // move constructor
+        small_vector(small_vector &&other) noexcept:
+            buf_(other.buf_),
+            data_(other.data_),
+            capacity_(other.capacity_),
+            size_(other.size_)
         {
             other.data_ = nullptr;
             other.capacity_ = 0;
             other.size_ = 0;
         }
 
+        //copy assignment operator
         small_vector &operator=(const small_vector &other) {
             if (capacity_ < other.size_) {
                 small_vector temp(other);
@@ -60,6 +70,7 @@ namespace epc {
             return *this;
         }
 
+        //move assignment operator
         small_vector &operator=(small_vector &&other) noexcept {
             swap(other);
             other.clear();
