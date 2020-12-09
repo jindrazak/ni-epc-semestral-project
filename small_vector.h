@@ -55,6 +55,27 @@ namespace epc {
             other.size_ = 0;
         }
 
+        //converting constructor
+        small_vector(std::initializer_list<value_type> init) : small_vector(){
+            if (init.size() == 0) return;
+            if(N < init.size()){
+                //we need to use the 'data_'
+                data_ = (T *) ::operator new(init.size() * sizeof(T));
+                try {
+                    std::uninitialized_copy(init.begin(), init.end(), data_);
+                } catch (...) {
+                    ::operator delete(data_);
+                    throw;
+                }
+                capacity_ = init.size();
+            }else{
+                //data fits to the 'buf_'
+                std::uninitialized_copy(init.begin(), init.end(), (T*)&buf_);
+            }
+
+            size_ = init.size();
+        }
+
         //copy assignment operator
         small_vector &operator=(const small_vector &other) {
             if (capacity_ < other.size_) {
