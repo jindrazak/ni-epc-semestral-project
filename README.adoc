@@ -1,23 +1,28 @@
-= Semestrální práce
+= Semestrální práce z předmětu NI-EPC
 
-- Veškeré poznámky týkající se vašeho vypracování semestrální práce pište do tohoto dokumentu ve formátu Asciidoc.
-- Základní nápověda viz https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/#links[AsciiDoc Syntax Quick Reference].
-- Kompletní dokumentace viz https://asciidoctor.org/docs/[Asciidoctor Documentation].
+Implementace šablonové třídy `small_vector` z jmenného prostoru `epc` představující zjednodušenou obdobu třídy `std::vector` s aplikací optimalizační techniky small buffer optimization.
 
-WARNING: Mějte na paměti, že formát Asciidoc se *neustále vyvíjí* a jeho implementace na fakultním serveru Gitlab *nemusí podporovat* veškerou funkcionalitu uvedenou v dokumentaci.
+* využívá dialekt jazyka C++17
 
-TIP: Při editaci můžete *náhled výsledku* průběžně sledovat v *záložce Preview*.
+Šablonová třída používá dva šablonové parametry:
 
-== Příklad vložení kódu {cpp}
+* `typename T` - hodnotový typ vektoru
+* `size_t N` - velikost SBO bufferu
 
-Základní podoba funkce `main` v {cpp}11:
+Příklad použití:
 
 [source,cpp]
 ----
 int main()
 {
-   // return 0 is implicit
+    epc::small_vector<int, 2> v;
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(3);             //od tohoto momentu dojde k ukládání na haldu
 }
 ----
 
-TIP: Pro *testovací účely* se může hodit služba https://asciidoclive.com/[asciidocLIVE].
+
+Kompletní zadání semestrální práce je k nalezení zde: https://courses.fit.cvut.cz/NI-EPC/semwork/index.html
+
+mailto:zakjindr@fit.cvut.cz[Jindřich Žák]
