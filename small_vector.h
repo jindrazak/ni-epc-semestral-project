@@ -1,7 +1,6 @@
 #ifndef EPC_SMALL_VECTOR
 #define EPC_SMALL_VECTOR
 
-#include <cstddef>
 #include <memory>
 
 namespace epc {
@@ -45,13 +44,17 @@ namespace epc {
 
         // move constructor
         small_vector(small_vector &&other) noexcept:
-            buf_(other.buf_),
             data_(other.data_),
             capacity_(other.capacity_),
             size_(other.size_)
         {
+            if(other.size_ <= N){
+                //if moving from the 'buf_' we need to move the elements manually
+                std::uninitialized_move(other.begin(), other.end(), begin());
+                std::destroy(other.begin(), other.end());
+            }
             other.data_ = nullptr;
-            other.capacity_ = 0;
+            other.capacity_ = N;
             other.size_ = 0;
         }
 
@@ -103,11 +106,60 @@ namespace epc {
             ::operator delete(data_);
         }
 
-        void swap(small_vector &other) noexcept {
-            std::swap(buf_, other.buf_);
-            std::swap(data_, other.data_);
-            std::swap(capacity_, other.capacity_);
-            std::swap(size_, other.size_);
+        void swap(small_vector &other) {
+            if(this->size_ > N && other.size_ > N){                         //both use 'data_'
+                std::swap(data_, other.data_);
+                std::swap(capacity_, other.capacity_);
+                std::swap(size_, other.size_);
+            }else if(this->size_ <= N && other.size_ <= N) {                //both use 'buf_'
+                // swap what can be swapped
+                size_t elementsToBeSwapped = std::min(this->size_, other.size_);
+                for (size_t i = 0; i < elementsToBeSwapped; ++i) {
+                    std::swap((*this)[i], other[i]);
+                }
+                // move the rest if needed
+                if(this->size_ != other.size_){
+                    auto from = this->size_ > other.size_ ? this : &other;
+                    auto to = this->size_ > other.size_ ? &other : this;
+                    size_t elementsToBeMoved = from->size_ - to->size_;
+                    try {
+                        for (size_t i = elementsToBeSwapped; i < from->size_; ++i) new ((T*)&to->buf_ + i) T(std::move_if_noexcept((*from)[i]));
+                    } catch(...) {
+                        //if exception is thrown, swap back to achieve strong exception guarantee
+                        for (size_t i = 0; i < elementsToBeSwapped; ++i) std::swap((*to)[i], (*from)[i]);
+                        // and destroy already constructed elements
+                        for (size_t i = elementsToBeSwapped; i < elementsToBeMoved; ++i) ((T*)&to->buf_ + i)->~T();
+                        throw;
+                    }
+                    //destroy moved elements from other
+                    for (size_t i = elementsToBeSwapped; i < elementsToBeMoved; ++i) ((T*)&from->buf_ + i)->~T();
+                }
+                std::swap(size_, other.size_);
+            }else if(this->size_ > N && other.size_ <= N) {                     //I use 'data_', other uses 'buf_'
+                //move_if_noexcept other's 'buf_' to mine
+                try {
+                    for (size_t i = 0; i < other.size_; ++i) new ((T*)&buf_ + i) T(std::move_if_noexcept(other[i]));
+                } catch(...) {
+                    for (size_t i = 0; i < other.size_; ++i) ((T*)&buf_ + i)->~T();
+                    throw;
+                }
+                //swap the rest
+                std::swap(data_, other.data_);
+                std::swap(capacity_, other.capacity_);
+                std::swap(size_, other.size_);
+            }else if(this->size_ <= N && other.size_ > N) {                     //I use 'buf_', other uses 'data_'
+                //move_if_noexcept mine 'buf_' to other's
+                try {
+                    for (size_t i = 0; i < this->size_; ++i) new ((T*)&other.buf_ + i) T(std::move_if_noexcept(((T*)&buf_)[i]));
+                } catch(...) {
+                    for (size_t i = 0; i < this->size_; ++i) ((T*)&other.buf_ + i)->~T();
+                    throw;
+                }
+                //swap the rest
+                std::swap(data_, other.data_);
+                std::swap(capacity_, other.capacity_);
+                std::swap(size_, other.size_);
+            }
         }
 
         void reserve(size_t new_capacity){
